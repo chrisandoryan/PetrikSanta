@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="theme-color" content="#000000">
-    <!--
+
+<head>
+  <meta charset="utf-8">
+  <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="theme-color" content="#000000">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!--
       manifest.json provides metadata used when your web app is added to the
       homescreen on Android. See https://developers.google.com/web/fundamentals/web-app-manifest/
     -->
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json">
-    <!--
+  <link rel="manifest" href="%PUBLIC_URL%/manifest.json">
+  <!--
       Notice the use of %PUBLIC_URL% in the tags above.
       It will be replaced with the URL of the `public` folder during the build.
       Only files inside the `public` folder can be referenced from the HTML.
@@ -19,14 +21,23 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
-    <title>React App</title>
-  </head>
-  <body>
-    <noscript>
-      You need to enable JavaScript to run this app.
-    </noscript>
-    <div id="root"></div>
-    <!--
+  <title>Petrik Santa 2K18</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.5/dat.gui.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.0.2/TweenMax.min.js"></script>
+  <script src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/16327/DrawSVGPlugin.js?r=12"></script>
+  <script src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/16327/MorphSVGPlugin.min.js"></script>
+  <script
+			  src="https://code.jquery.com/jquery-2.2.4.min.js"
+			  integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
+			  crossorigin="anonymous"></script>
+</head>
+
+<body class="sky">
+  <noscript>
+    You need to enable JavaScript to run this app.
+  </noscript>
+  <div id="root"></div>
+  <!--
       This HTML file is a template.
       If you open it directly in the browser, you will see an empty page.
 
@@ -36,5 +47,150 @@
       To begin the development, run `npm start` or `yarn start`.
       To create a production bundle, use `npm run build` or `yarn build`.
     -->
-  </body>
+</body>
+<script>
+  var particleCount = 300;
+  var particleMax = 1000;
+  var sky = document.querySelector('.sky');
+  var canvas = document.createElement('canvas');
+  var ctx = canvas.getContext('2d');
+  var width = sky.clientWidth;
+  var height = sky.clientHeight;
+  var i = 0;
+  var active = false;
+  var snowflakes = [];
+  var snowflake;
+
+  canvas.style.position = 'absolute';
+  canvas.style.left = canvas.style.top = '0';
+
+  var Snowflake = function () {
+    this.x = 0;
+    this.y = 0;
+    this.vy = 0;
+    this.vx = 0;
+    this.r = 0;
+
+    this.reset();
+  };
+
+  Snowflake.prototype.reset = function () {
+    this.x = Math.random() * width;
+    this.y = Math.random() * -height;
+    this.vy = 1 + Math.random() * 3;
+    this.vx = 0.5 - Math.random();
+    this.r = 1 + Math.random() * 2;
+    this.o = 0.5 + Math.random() * 0.5;
+  };
+
+  function generateSnowFlakes() {
+    snowflakes = [];
+    for (i = 0; i < particleMax; i++) {
+      snowflake = new Snowflake();
+      snowflake.reset();
+      snowflakes.push(snowflake);
+    }
+  }
+
+  generateSnowFlakes();
+
+  function update() {
+    ctx.clearRect(0, 0, width, height);
+
+    if (!active) {
+      return;
+    }
+
+    for (i = 0; i < particleCount; i++) {
+      snowflake = snowflakes[i];
+      snowflake.y += snowflake.vy;
+      snowflake.x += snowflake.vx;
+
+      ctx.globalAlpha = snowflake.o;
+      ctx.beginPath();
+      ctx.arc(snowflake.x, snowflake.y, snowflake.r, 0, Math.PI * 2, false);
+      ctx.closePath();
+      ctx.fill();
+
+      if (snowflake.y > height) {
+        snowflake.reset();
+      }
+    }
+
+    requestAnimFrame(update);
+  }
+
+  function onResize() {
+    width = sky.clientWidth;
+    height = sky.clientHeight;
+    canvas.width = width;
+    canvas.height = height;
+    ctx.fillStyle = '#FFF';
+
+    var wasActive = active;
+    active = width > 600;
+
+    if (!wasActive && active) {
+      requestAnimFrame(update);
+    }
+  }
+
+  // shim layer with setTimeout fallback
+  window.requestAnimFrame = (function () {
+    return window.requestAnimationFrame ||
+      window.webkitRequestAnimationFrame ||
+      window.mozRequestAnimationFrame ||
+      function (callback) {
+        window.setTimeout(callback, 1000 / 60);
+      };
+  })();
+
+  onResize();
+  window.addEventListener('resize', onResize, false);
+
+  sky.appendChild(canvas);
+</script>
+<script>
+  var svgNS = "http://www.w3.org/2000/svg";
+
+  addRotateTransform('Candy_1', 15, 1);
+  addRotateTransform('Candy_2', 15, -1);
+  addRotateTransform('Candy_3', 15, -1);
+  addRotateTransform('Candy_4', 15, 1);
+  addRotateTransform('Candy_5', 15, -1);
+
+  function addRotateTransform(target_id, dur, dir) {
+    var my_element = document.getElementById(target_id);
+    var a = document.createElementNS(svgNS, "animateTransform");
+
+    var bb = my_element.getBBox();
+    var cx = bb.x + bb.width / 2;
+    var cy = bb.y + bb.height / 2;
+
+    a.setAttributeNS(null, "attributeName", "transform");
+    a.setAttributeNS(null, "attributeType", "XML");
+    a.setAttributeNS(null, "type", "rotate");
+    a.setAttributeNS(null, "dur", dur + "s");
+    a.setAttributeNS(null, "repeatCount", "indefinite");
+    a.setAttributeNS(null, "from", "0 " + cx + " " + cy);
+    a.setAttributeNS(null, "to", 360 * dir + " " + cx + " " + cy);
+
+    my_element.appendChild(a);
+    a.beginElement();
+  }
+</script>
+<script>
+  $(document).ready(function () {
+    $('.nice-textbox').blur(function () {
+      if ($(this).val().length === 0) {
+        $('.nice-label').removeClass("focus");
+      }
+      else { returns; }
+    })
+      .focus(function () {
+        $('.nice-label').addClass("focus")
+      });
+  });
+</script>
+
 </html>
