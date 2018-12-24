@@ -1,8 +1,17 @@
 import React, { Component } from 'react';
 import { Power4, Bounce, TimelineMax } from "gsap/TweenMax";
+import { authInstance, firestoreInstance } from '../firebase/firebase';
 import $ from 'jquery'
 
 class Loading extends Component {
+
+  constructor(props) {
+    super(props);
+  }
+
+  componentDidMount() {
+
+  }
 
   render() {
     return (      
@@ -204,11 +213,14 @@ class Main extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      displayGreeting: false
+      userUid: ''
     }
   }
 
   componentDidMount() {
+
+    this.setState({ userUid: this.props.uid});
+
     /* Global Variables */
     var $box = $('.box')
 
@@ -337,11 +349,20 @@ class Main extends Component {
         height: '2px'
       }).removeClass('is-open');
     });
-      
+
+    this.doPairMatching();
   }
 
   doPairMatching() {
-
+    firestoreInstance.collection("participants")
+      .where("donePairing", '==', false).get().then((querySnapshot) => {
+        let participants = querySnapshot.docs.filter(doc => doc.id != this.state.userUid).map(doc => doc.data());
+        console.log(participants)
+        querySnapshot.forEach(function(doc) {
+            // doc.data() is never undefined for query doc snapshots
+            console.log(doc.id, " => ", doc.data());
+        });
+    });
   }
   
   render() {

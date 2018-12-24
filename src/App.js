@@ -13,8 +13,8 @@ class App extends Component {
 
 	render() {
 		return (
-			// <Intro></Intro>
-			<Register></Register>
+			<Intro></Intro>
+			// <Register></Register>
 		);
 	}
 }
