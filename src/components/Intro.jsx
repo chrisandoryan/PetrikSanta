@@ -30,7 +30,7 @@ class Intro extends Component {
       <React.Fragment>
         {
           this.state.isAuth ? (
-            <Main uid={this.state.usrObj.uid}></Main>
+            <Main user={this.state.usrObj}></Main>
           ) : (
             <form onSubmit={this.doLogin.bind(this)}>
               <h1 style={{ textAlign: "center", fontSize: 80, margin: 30 }}>Hi! Mind to Join?</h1>
@@ -43,7 +43,7 @@ class Intro extends Component {
                 {/* <label className="nice-label" htmlFor="Password">Password</label> */}
               </div>
               <div className="nice-wrap">
-                <div class="btn btn-1 nice-textbox">
+                <div className="btn btn-1 nice-textbox">
                   <button style={{ pointerEvents: "auto" }}>Blast!</button>
                 </div>
               </div>

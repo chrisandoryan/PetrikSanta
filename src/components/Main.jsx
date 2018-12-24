@@ -2,15 +2,26 @@ import React, { Component } from 'react';
 import { Power4, Bounce, TimelineMax } from "gsap/TweenMax";
 import { authInstance, firestoreInstance } from '../firebase/firebase';
 import $ from 'jquery'
+import { firestore } from 'firebase';
 
 class Loading extends Component {
 
   constructor(props) {
     super(props);
+    this.state = {
+      statusDisplayed: ""
+    }
   }
 
   componentDidMount() {
+    window.addRotateTransform('Candy_1', 15, 1);
+    window.addRotateTransform('Candy_2', 15, -1);
+    window.addRotateTransform('Candy_3', 15, -1);
+    window.addRotateTransform('Candy_4', 15, 1);
+    window.addRotateTransform('Candy_5', 15, -1);
 
+    let status = ['Contacting Santa Claus', 'Matching Chemistry', 'Initiating Pairing Algorithm', 'Taking-off to North Pole'];
+    setInterval(() => this.setState({ statusDisplayed: status[Math.floor(Math.random() * status.length)] }), 500);
   }
 
   render() {
@@ -202,7 +213,7 @@ class Loading extends Component {
           </g>
         </g>
     </svg>
-    <h2 style={{textAlign: "center"}}>Matching Parameters</h2>
+    <h2 style={{textAlign: "center"}}>{this.state.statusDisplayed}</h2>
     </React.Fragment>
     )
   }
@@ -213,14 +224,55 @@ class Main extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      userUid: ''
+      user: {},
+      userUid: '',
+      pair: {},
+      pairUid: ''
     }
+  }
+
+  sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  fetchData = async () => {
+    firestoreInstance.collection("participants")
+      .doc(this.props.user.uid)
+      .get()
+      .then((docUser) => {
+        if (docUser.data().donePairing) {
+          $('.modal-box').css({
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%'
+          }).addClass('is-open');
+        }
+        this.setState({ user: docUser.data(), userUid: this.props.user.uid});
+        firestoreInstance.collection("pairs")
+          .where("secretSantaId", '==', this.props.user.uid)
+          .get()
+          .then((docPair) => {
+            if (!docPair.empty) {
+              let pairData = docPair.docs.map(d => d.data())[0];
+              console.log(pairData.dateTime)
+              this.setState({dataTaken: pairData.dateTime});
+              firestoreInstance.collection("participants")
+                .doc(pairData.goodBoyId)
+                .get()
+                .then((docGoodBoy) => {
+                  this.setState({ pair: docGoodBoy.data(), pairUid: pairData.goodBoyId });
+                  clearInterval();
+                })
+            }
+          })
+      })
   }
 
   componentDidMount() {
 
-    this.setState({ userUid: this.props.uid});
-
+    this.fetchData();
+    
     /* Global Variables */
     var $box = $('.box')
 
@@ -350,18 +402,37 @@ class Main extends Component {
       }).removeClass('is-open');
     });
 
-    this.doPairMatching();
   }
 
-  doPairMatching() {
+  doPairMatching = () => {
     firestoreInstance.collection("participants")
       .where("donePairing", '==', false).get().then((querySnapshot) => {
-        let participants = querySnapshot.docs.filter(doc => doc.id != this.state.userUid).map(doc => doc.data());
-        console.log(participants)
-        querySnapshot.forEach(function(doc) {
-            // doc.data() is never undefined for query doc snapshots
-            console.log(doc.id, " => ", doc.data());
-        });
+        let participants = querySnapshot.docs.filter(doc => doc.id != this.state.userUid).map(doc => { let d = doc.data(); d.id = doc.id; return d });
+        let goodBoy = participants[Math.floor(Math.random() * participants.length)];
+        console.log(goodBoy);
+        console.log(participants);
+
+        firestoreInstance.collection("pairs")
+          .add({
+            goodBoyId: goodBoy.id,
+            secretSantaId: this.state.userUid,
+            dateTime: new Date()
+          })
+
+        firestoreInstance.collection("participants")
+          .doc(this.state.userUid)
+          .update({
+            donePairing: true
+          })
+          .then(() => {
+            this.fetchData();
+          })
+
+        // querySnapshot.forEach(function(doc) {
+        //     // doc.data() is never undefined for query doc snapshots
+        //     console.log(doc.id, " => ", doc.data());
+        // });
+
     });
   }
   
@@ -371,9 +442,16 @@ class Main extends Component {
           <div className="modal-box" style={{zIndex: 1, pointerEvents: "auto"}}>
             <div className="modal-box-content">
               <div className="contents">
-                <Loading></Loading>
-                {/* <h1 className="ttl">AO18-1</h1>
-                <p className="p">Please Have Him a Merry Little Present :) <br/> -Petrik Allstars</p> */}
+                {
+                  this.state.pair ? 
+                    this.state.pair.initial == undefined ? ( <Loading></Loading> ) : (
+                      <React.Fragment>
+                        <h1 className="ttl">{`${this.state.pair.initial}${this.state.pair.generation}`}</h1>
+                        <p className="p">Please Have {this.state.pair.gender == "Male" ? 'Him' : 'Her'} a Merry Little Present :) <br/> Merry Christmas! </p>
+                        <p style={{textAlign: "center"}}>Data was taken on {this.state.dataTaken.toString()}</p>
+                      </React.Fragment>
+                    ) : (null)
+                }
                 <div className="layer-6" />
                 <div className="layer-5" />
                 <div className="layer-4" />
@@ -388,13 +466,13 @@ class Main extends Component {
           </div>
           <div className="wrapper" style={{ zIndex: 0, pointerEvents: "auto" }}>
             <svg xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" version="1.1" id="xmas" x={0} y={0} viewBox="0 0 270.1 140.1" xmlSpace="preserve" enableBackground="new 0 0 270.1 140.1">
-              <g id="Presents">
+              <g id="Presents" className="modal-open" onClick={this.doPairMatching.bind(this)}>
                 <g id="PresentB" className="box">
                   <ellipse id="ShadowPresent" className="PresentBoxShadow" cx="188.2" cy="117.3" rx="81.8" ry="22.8" fill="#81572A" />
                   <g className="PresentBox">
                     <g id="Logo" className="socialLinkP">
                       <a href="#" className="modal-open">
-                        <circle cx="182.3" cy="96.3" r="18.5" fill="#FFF" />
+                        <circle cx="182.3" cy="96.3" r="18.5" fill="#FFF"/>
                         <defs>
                           <rect id="SVGID_5_" x="146.7" y="61.9" transform="matrix(-1 5.395776e-03 -5.395776e-03 -1 365.5186 194.4719)" width="71.6" height="71.6" />
                         </defs>
