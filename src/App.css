@@ -664,9 +664,39 @@ body {
   -webkit-transform: translate(0, 0);
   transform: translate(0, 0);
 }
+
+.btn .btn-2 {
+  align-items: center;
+  justify-content: center;
+  display: flex;
+}
+
+.btn-2 button {
+  font-weight: bold;
+  width: 455px;
+  font-size: 28px;
+  padding: 10px;
+  text-align: center;
+  color: #6ab1c9;
+  background: transparent;
+  /* margin: 0 auto; */
+  float: right;
+  border: 3px solid #6ab1c9;
+  border-radius: 5px;
+  -webkit-transition: all 0.5s ease;
+  transition: all 0.5s ease;
+  -webkit-transform: translate(0, 0);
+  transform: translate(0, 0);
+}
+
 .btn-1 button a {
   color: #c7f8f9;
 }
+
+.btn-2 button a {
+  color: #6ab1c9;
+}
+
 .btn-1 button:hover {
   background: #c7f8f9;
   color: #6ab1c9;

@@ -20,7 +20,7 @@ class Loading extends Component {
     window.addRotateTransform('Candy_4', 15, 1);
     window.addRotateTransform('Candy_5', 15, -1);
 
-    let status = ['Contacting Santa Claus', 'Matching Chemistry', 'Initiating Pairing Algorithm', 'Taking-off to North Pole'];
+    let status = ['Contacting Santa Claus', 'Matching Chemistry', 'Initiating Pairing Algorithm', 'Taking-off to North Pole', 'Putting Up Christmas Decorations', 'Preparing Bacon and Cheese', 'Calibrating the Satellite', 'Consulting Patrik Star'];
     setInterval(() => this.setState({ statusDisplayed: status[Math.floor(Math.random() * status.length)] }), 500);
   }
 
@@ -227,7 +227,8 @@ class Main extends Component {
       user: {},
       userUid: '',
       pair: {},
-      pairUid: ''
+      pairUid: '',
+      participants: []
     }
   }
 
@@ -271,8 +272,17 @@ class Main extends Component {
 
   componentDidMount() {
 
-    this.fetchData();
-    
+    firestoreInstance.collection("pairs")
+      .onSnapshot(() => {
+        this.fetchData();
+    })
+
+    firestoreInstance.collection("participants")
+        .where("beenPaired", '==', false).onSnapshot((querySnapshot) => {
+          let participants = querySnapshot.docs.filter(doc => doc.id != this.props.user.uid).map(doc => { let d = doc.data(); d.id = doc.id; return d });
+          this.setState({ participants })
+        })
+
     /* Global Variables */
     var $box = $('.box')
 
@@ -406,34 +416,39 @@ class Main extends Component {
 
   doPairMatching = () => {
     firestoreInstance.collection("participants")
-      .where("donePairing", '==', false).get().then((querySnapshot) => {
-        let participants = querySnapshot.docs.filter(doc => doc.id != this.state.userUid).map(doc => { let d = doc.data(); d.id = doc.id; return d });
-        let goodBoy = participants[Math.floor(Math.random() * participants.length)];
-        console.log(goodBoy);
-        console.log(participants);
-
-        firestoreInstance.collection("pairs")
-          .add({
-            goodBoyId: goodBoy.id,
-            secretSantaId: this.state.userUid,
-            dateTime: new Date()
-          })
-
-        firestoreInstance.collection("participants")
-          .doc(this.state.userUid)
-          .update({
-            donePairing: true
-          })
-          .then(() => {
-            this.fetchData();
-          })
-
-        // querySnapshot.forEach(function(doc) {
-        //     // doc.data() is never undefined for query doc snapshots
-        //     console.log(doc.id, " => ", doc.data());
-        // });
-
-    });
+      .doc(this.props.user.uid)
+      .get()
+      .then((docUser) => {
+        if (!docUser.data().donePairing) {
+          console.log(this.state.participants);
+          let goodBoy = this.state.participants[Math.floor(Math.random() * this.state.participants.length)];
+          console.log(goodBoy)
+          firestoreInstance.collection("participants")
+            .doc(this.state.userUid)
+            .update({
+              donePairing: true
+            })
+            .then(() => {
+              firestoreInstance.collection("participants")
+                .doc(goodBoy.id)
+                .update({
+                  beenPaired: true
+                })
+                .then(() => {
+                  firestoreInstance.collection("pairs")
+                    .add({
+                      goodBoyId: goodBoy.id,
+                      secretSantaId: this.state.userUid,
+                      dateTime: new Date()
+                    })
+                })
+              this.fetchData();
+          // querySnapshot.forEach(function(doc) {
+          //     // doc.data() is never undefined for query doc snapshots
+          //     console.log(doc.id, " => ", doc.data());
+          // }
+          });
+        }})
   }
   
   render() {
